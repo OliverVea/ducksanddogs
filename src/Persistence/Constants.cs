@@ -2,5 +2,5 @@ namespace DucksAndDogs.Persistence;
 
 public static class Constants
 {
-    public const string ModelDataPath = "./Data/ModelData.json";
+    public const string ModelDataPath = "./data/ModelData.json";
 }

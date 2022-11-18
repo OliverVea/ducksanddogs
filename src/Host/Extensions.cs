@@ -1,8 +1,7 @@
 using System.Text.Json.Serialization;
-using DucksAndDogs.Core.Services;
-using DucksAndDogs.Core.Stores;
-using DucksAndDogs.Persistence.Stores;
-using DucksAndDogs.Services.Ml;
+using DucksAndDogs.Application;
+using DucksAndDogs.Application.ML;
+using DucksAndDogs.Persistence;
 
 namespace DucksAndDogs.Host;
 
@@ -22,8 +21,9 @@ public static class ServiceExtensions
             foreach (var libFile in libFiles) options.IncludeXmlComments(libFile);
         });
 
-        services.AddScoped<IModelService, ModelService>();
-        services.AddScoped<IModelStore, ModelStore>();
+        services.AddApplicationServices()
+            .AddMachineLearningServices()
+            .AddStores();
 
         return services;
     }

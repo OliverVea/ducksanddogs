@@ -1,5 +1,6 @@
 namespace DucksAndDogs.Persistence.Models;
 
-sealed record ModelData {
+sealed record ModelData
+{
     public Model[] Models { get; set; } = Array.Empty<Model>();
 }

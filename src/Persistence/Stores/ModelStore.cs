@@ -1,193 +1,87 @@
 using DucksAndDogs.Core.Models;
 using DucksAndDogs.Core.Stores;
 using DucksAndDogs.Persistence.Models;
-using System.Text.Json;
 
 namespace DucksAndDogs.Persistence.Stores;
 
-public class ModelStore : IModelStore
+public class ModelStore : StoreBase, IModelStore
 {
-    private const int SemaphoreTimeoutMilliseconds = 5000;
-
     private static readonly SemaphoreSlim _jsonFileSemaphore = new SemaphoreSlim(1, 1);
 
-    public async Task<Result> Create(Core.Models.Model model)
+    public Task<Result> Create(Core.Models.Model model)
     {
-        var error = await GetSemaphoreAsync();
-        if (error != null) return Result.Failed(error);
+        return DoWithSemaphore(_jsonFileSemaphore, async () => {
+            var result = await ReadJsonFile<ModelData>(Constants.ModelDataPath);
+            if (!result.Succeeded()) return (Result)result;
 
-        try
-        {
-            var result = await ReadJsonFile();
-            if (!result.Succeeded())
-            {
-                error = new Error(500, "", "Failed reading models file.");
-                return Result.Failed(error);
-            }
+            var data = result.Value;
 
-            var newData = result.Value with
+            var newData = data with
             {
-                Models = result.Value.Models.Append(Map(model)).ToArray()
+                Models = data.Models.Append(Map(model)).ToArray()
             };
 
-            var writeResult = await WriteJsonFile(newData);
-            if (!writeResult.Succeeded())
-            {
-                error = new Error(500, "", "Failed writing models file.");
-                return Result.Failed(error);
-            }
+            var writeResult = await WriteJsonFile(newData, Constants.ModelDataPath);
+            if (!writeResult.Succeeded()) return writeResult;
 
             return Result.Success();
-        }
-        catch (Exception e) {
-            error = new Error(500, "", $"Failed creating model with exception:\n{e}");
-            return Result.Failed(error);
-        }
-        finally
-        {
-            _jsonFileSemaphore.Release();
-        }
+        });
     }
 
-    public async Task<Result> Delete(string modelId)
+    public Task<Result> Delete(string modelId)
     {
-        var error = await GetSemaphoreAsync();
-        if (error != null) return Result.Failed(error);
-        
-        try {
-            var readResult = await ReadJsonFile();
-            if (!readResult.Succeeded())
-            {
-                error = new Error(500, "", "Failed reading models file.");
-                return Result.Failed(error);
-            }
+        return DoWithSemaphore(_jsonFileSemaphore, async () => {
+            var readResult = await ReadJsonFile<ModelData>(Constants.ModelDataPath);
+            if (!readResult.Succeeded()) return (Result)readResult;
 
             var newData = readResult.Value with
             {
                 Models = readResult.Value.Models.Where(x => x.Id != modelId).ToArray()
             };
 
-            var writeResult = await WriteJsonFile(newData);
-            if (!writeResult.Succeeded())
-            {
-                error = new Error(500, "", "Failed writing models file.");
-                return Result.Failed(error);
-            }
+            var writeResult = await WriteJsonFile(newData, Constants.ModelDataPath);
+            if (!writeResult.Succeeded()) return writeResult;
 
             return Result.Success();
-        }
-        catch (Exception e) {
-            error = new Error(500, "", $"Failed deleting model with exception:\n{e}");
-            return Result.Failed(error);
-        }
-        finally {
-            _jsonFileSemaphore.Release();
-        }
+        });
     }
 
-    public async Task<Result<Core.Models.Model>> Get(string modelId)
+    public Task<Result<Core.Models.Model>> Get(string modelId)
     {
-        var error = await GetSemaphoreAsync();
-        if (error != null) return Result<Core.Models.Model>.Failed(error);
-        
-        try {
-            var result = await ReadJsonFile();
-            if (!result.Succeeded())
-            {
-                error = new Error(500, "", "Failed reading models file.");
-                return Result<Core.Models.Model>.Failed(error);
-            }
+        return DoWithSemaphore(_jsonFileSemaphore, async () => {
+            var result = await ReadJsonFile<ModelData>(Constants.ModelDataPath);
+            if (!result.Succeeded()) 
+                return Result<Core.Models.Model>.Failed(new Error(500, "", "Failed reading models file."));
 
             var model = result.Value.Models
                 .Where(x => x.Id == modelId)
                 .Select(Map)
-                .SingleOrDefault();
+                .FirstOrDefault();
 
-            if (model == null) {
-                error = new Error(404, "modelId", $"Could not find model with id {modelId}.");
-                return Result<Core.Models.Model>.Failed(error);
-            }
+            if (model == null) 
+                return Result<Core.Models.Model>.Failed(new Error(404, "modelId", $"Could not find model with id {modelId}."));
 
             return Result<Core.Models.Model>.Success(model);
-        }
-        catch (Exception e) {
-            error = new Error(500, "", $"Failed getting model with exception:\n{e}");
-            return Result<Core.Models.Model>.Failed(error);
-        }
-        finally {
-            _jsonFileSemaphore.Release();
-        }
+        });
     }
 
-    public async Task<Result<ModelList>> List()
+    public Task<Result<ModelList>> List()
     {
-        var error = await GetSemaphoreAsync();
-        if (error != null) return Result<ModelList>.Failed(error);
-        
-        try {
-            var result = await ReadJsonFile();
+        return DoWithSemaphore(_jsonFileSemaphore, async () => {
+             var result = await ReadJsonFile<ModelData>(Constants.ModelDataPath);
             if (!result.Succeeded())
-            {
-                error = new Error(500, "", "Failed reading models file.");
-                return Result<ModelList>.Failed(error);
-            }
+                return Result<ModelList>.Failed(new Error(500, "", "Failed reading models file."));
 
             var models = result.Value.Models.Select(Map).ToList();
-            var modelList = new ModelList 
+            var modelList = new ModelList
             {
                 Models = models
             };
 
             return Result<ModelList>.Success(modelList);
-        }
-        catch (Exception e) {
-            error = new Error(500, "", $"Failed getting model with exception:\n{e}");
-            return Result<ModelList>.Failed(error);
-        }
-        finally {
-            _jsonFileSemaphore.Release();
-        }
+        });
     }
-
-    private async Task<Result<ModelData>> ReadJsonFile()
-    {
-        var fileStream = File.OpenRead(Constants.ModelDataPath);
-        try {
-            var data = await JsonSerializer.DeserializeAsync<ModelData>(fileStream);
-            if (data == null) {
-                var error = new Error(500, "", "Could not deserialize ModelData file.");
-                return Result<ModelData>.Failed(error);
-            }
-
-            return Result<ModelData>.Success(data);
-        }
-        finally 
-        {
-            fileStream.Close();
-        }
-    }
-
-    private async Task<Result> WriteJsonFile(ModelData data)
-    {
-        File.Delete(Constants.ModelDataPath);
-        var fileStream = File.OpenWrite(Constants.ModelDataPath);
-        try {
-            await JsonSerializer.SerializeAsync<ModelData>(fileStream, data);
-            
-            return Result.Success();
-        }
-        finally 
-        {
-            fileStream.Close();
-        }
-    }
-
-    private async Task<Error?> GetSemaphoreAsync() 
-    { 
-        var gotSemaphore = await _jsonFileSemaphore.WaitAsync(SemaphoreTimeoutMilliseconds);
-        if (!gotSemaphore) return new Error(500, "", "Could not get access to json file.");
-        return null;
-    }
+    
 
 
     private Persistence.Models.Model MapCreateRequest(string modelId, CreateModelRequest request)

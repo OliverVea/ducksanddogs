@@ -20,11 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Core/Core.csproj" />
-    <ProjectReference Include="../Services/Services.csproj" />
-    <ProjectReference Include="../Services.ML/Services.ML.csproj" />
-    <ProjectReference Include="../Api/Api.csproj" />
-    <ProjectReference Include="../Persistence/Persistence.csproj" />
+    <ProjectReference Include="../../src/Core/Core.csproj" />
+    <ProjectReference Include="../../src/Application/Application.csproj" />
+    <ProjectReference Include="../../src/Application.ML/Application.ML.csproj" />
+    <ProjectReference Include="../../src/Api/Api.csproj" />
+    <ProjectReference Include="../../src/Persistence/Persistence.csproj" />
   </ItemGroup>
 
 </Project>

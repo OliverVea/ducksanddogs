@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,9 +6,7 @@
     <RootNamespace>DucksAndDogs.Persistence</RootNamespace>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-
   <ItemGroup>
-    <ProjectReference Include="../Core/Core.csproj" />
+    <ProjectReference Include="../../src/Core/Core.csproj" />
   </ItemGroup>
-
 </Project>

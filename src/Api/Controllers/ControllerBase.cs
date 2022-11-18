@@ -55,12 +55,12 @@ public class ControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
     private ValidationProblemDetails CreateProblemDetails(ModelStateDictionary modelState, int statusCode)
     {
         var problemDetails = ProblemDetailsFactory.CreateProblemDetails(HttpContext, statusCode);
-        
-        return new ValidationProblemDetails(modelState) 
+
+        return new ValidationProblemDetails(modelState)
         {
             Title = problemDetails.Title,
             Type = problemDetails.Type
         };
-        
+
     }
 }

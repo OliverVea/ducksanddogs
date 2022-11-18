@@ -6,7 +6,7 @@ namespace DucksAndDogs.Core.Models;
 /// Base class for results.
 /// </summary>
 /// <value></value>
-public abstract record ResultBase 
+public abstract record ResultBase
 {
     /// <summary>
     /// The error, if any arose while executing the operation.
@@ -16,13 +16,13 @@ public abstract record ResultBase
     /// <summary>
     /// Constructor for successful results.
     /// </summary>
-    protected ResultBase() { }
+    public ResultBase() { }
 
     /// <summary>
     /// Constructor for erroneous results.
     /// </summary>
     /// <param name="error">The error which made the operation fail.</param>
-    protected ResultBase(Error error) => Error = error;
+    public ResultBase(Error error) => Error = error;
 
     /// <summary>
     /// Checks if the operation was successful.
@@ -74,4 +74,10 @@ public record Result<TResult> : ResultBase
     /// </summary>
     /// <returns></returns>
     public static Result<TResult> Failed(Error error) => new Result<TResult> { Error = error };
+
+    /// <summary>
+    /// Utility 
+    /// </summary>
+    /// <param name="other"></param>
+    public static explicit operator Result(Result<TResult> other) => new Result { Error = other.Error };
 }

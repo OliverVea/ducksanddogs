@@ -12,15 +12,21 @@ namespace DucksAndDogs.Api.Controllers;
 [Route("models")]
 public class ModelsController : ControllerBase
 {
-    private readonly IModelService _service;
+    private readonly IModelService _modelService;
+    private readonly IModelTrainingService _trainingService;
+    private readonly IModelInferenceService _inferenceService;
 
     /// <summary>
     /// Constructor called by the framework.
     /// </summary>
-    /// <param name="service"></param>
-    public ModelsController(IModelService service)
+    /// <param name="modelService"></param>
+    /// <param name="trainingService"></param>
+    /// <param name="inferenceService"></param>
+    public ModelsController(IModelService modelService, IModelTrainingService trainingService, IModelInferenceService inferenceService)
     {
-        _service = service;
+        _modelService = modelService;
+        _trainingService = trainingService;
+        _inferenceService = inferenceService;
     }
 
     /// <summary>
@@ -30,7 +36,7 @@ public class ModelsController : ControllerBase
     [HttpGet(Name = "ListModels")]
     public async Task<ActionResult<ModelList>> List()
     {
-        var result = await _service.List();
+        var result = await _modelService.List();
         if (result.Succeeded()) return result.Value;
         return MapError(result.Error);
     }
@@ -44,7 +50,7 @@ public class ModelsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Model>> Get(string modelId)
     {
-        var result = await _service.Get(modelId);
+        var result = await _modelService.Get(modelId);
         if (result.Succeeded()) return result.Value;
         return MapError(result.Error);
     }
@@ -58,7 +64,7 @@ public class ModelsController : ControllerBase
     [HttpPut("{modelId}", Name = "CreateModel")]
     public async Task<ActionResult<Model>> Create(string modelId, CreateModelRequest request)
     {
-        var result = await _service.Create(modelId, request);
+        var result = await _modelService.Create(modelId, request);
         if (result.Succeeded()) return result.Value;
         return MapError(result.Error);
     }
@@ -71,7 +77,7 @@ public class ModelsController : ControllerBase
     [HttpDelete("{modelId}", Name = "DeleteModel")]
     public async Task<ActionResult> Delete(string modelId)
     {
-        var result = await _service.Delete(modelId);
+        var result = await _modelService.Delete(modelId);
         if (result.Succeeded()) return Ok();
         return MapError(result.Error);
     }
@@ -85,7 +91,7 @@ public class ModelsController : ControllerBase
     [HttpPost("{modelId}/train", Name = "TrainModel")]
     public async Task<ActionResult> Train(string modelId, TrainModelRequest request)
     {
-        var result = await _service.Train(modelId, request);
+        var result = await _trainingService.Train(modelId, request);
         if (result.Succeeded()) return Ok();
         return MapError(result.Error);
     }
@@ -97,9 +103,9 @@ public class ModelsController : ControllerBase
     /// <param name="request"></param>
     /// <returns></returns>
     [HttpPost("{modelId}/infer", Name = "Infer")]
-    public async Task<ActionResult<Inference>> Infer(string modelId, InferRequest request)
+    public async Task<ActionResult<Inference>> Infer(string modelId, [FromForm] InferRequest request)
     {
-        var result = await _service.Infer(modelId, request);
+        var result = await _inferenceService.Infer(modelId, request);
         if (result.Succeeded()) return Ok();
         return MapError(result.Error);
     }

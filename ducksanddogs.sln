@@ -7,9 +7,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Host", "src\Host\Host.cspro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{ECD69AD5-26D2-4ADE-9944-C8929B9E7106}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "src\Services\Services.csproj", "{DEEFC056-078B-4C66-8D6D-E270675B53D2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "src\Application\Application.csproj", "{DEEFC056-078B-4C66-8D6D-E270675B53D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services.ML", "src\Services.ML\Services.ML.csproj", "{629111E1-06EB-4FF0-968A-CAF4886C48C8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.ML", "src\Application.ML\Application.ML.csproj", "{629111E1-06EB-4FF0-968A-CAF4886C48C8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "src\Api\Api.csproj", "{3D870252-6E57-4ABE-8B1A-241455659BFA}"
 EndProject
