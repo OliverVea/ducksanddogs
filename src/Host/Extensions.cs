@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using DucksAndDogs.Application;
 using DucksAndDogs.Application.ML;
+using DucksAndDogs.Jobs;
 using DucksAndDogs.Persistence;
 
 namespace DucksAndDogs.Host;
@@ -23,7 +24,8 @@ public static class ServiceExtensions
 
         services.AddApplicationServices()
             .AddMachineLearningServices()
-            .AddStores();
+            .AddStores()
+            .AddJobs();
 
         return services;
     }
@@ -48,6 +50,8 @@ public static class ServiceExtensions
         {
             endpoints.MapControllers();
         });
+
+        app.InitializeStores();
 
         return app;
     }

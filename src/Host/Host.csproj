@@ -25,6 +25,7 @@
     <ProjectReference Include="../../src/Application.ML/Application.ML.csproj" />
     <ProjectReference Include="../../src/Api/Api.csproj" />
     <ProjectReference Include="../../src/Persistence/Persistence.csproj" />
+    <ProjectReference Include="../../src/Jobs/Jobs.csproj" />
   </ItemGroup>
 
 </Project>

@@ -11,9 +11,9 @@ public class ModelService : IModelService
     {
         _store = store;
     }
-    public async Task<Result<Model>> Create(string modelId, CreateModelRequest request)
+    public async Task<Result<Model>> CreateAsync(string modelId, CreateModelRequest request)
     {
-        var getExisting = await Get(modelId);
+        var getExisting = await GetAsync(modelId);
 
         if (getExisting.Succeeded())
         {
@@ -30,15 +30,15 @@ public class ModelService : IModelService
             Status = ModelStatus.Untrained
         };
 
-        var result = await _store.Create(model);
+        var result = await _store.CreateAsync(model);
         if (!result.Succeeded()) return Result<Model>.Failed(result.Error);
 
         return Result<Model>.Success(model);
     }
 
-    public async Task<Result> Delete(string modelId)
+    public async Task<Result> DeleteAsync(string modelId)
     {
-        var getExisting = await Get(modelId);
+        var getExisting = await GetAsync(modelId);
         if (!getExisting.Succeeded()) return Result.Failed(getExisting.Error);
 
         var model = getExisting.Value;
@@ -48,16 +48,29 @@ public class ModelService : IModelService
             return Result.Failed(error);
         }
 
-        return await _store.Delete(modelId);
+        return await _store.DeleteAsync(modelId);
     }
 
-    public Task<Result<Model>> Get(string modelId)
+    public Task<Result<Model>> GetAsync(string modelId)
     {
-        return _store.Get(modelId);
+        return _store.GetAsync(modelId);
     }
 
-    public Task<Result<ModelList>> List()
+    public Task<Result<ModelList>> ListAsync()
     {
-        return _store.List();
+        return _store.ListAsync();
+    }
+
+    public async Task<Result> SetStatusAsync(string modelId, ModelStatus newStatus)
+    {
+        var getExisting = await GetAsync(modelId);
+        if (!getExisting.Succeeded()) return Result.Failed(getExisting.Error);
+
+        var model = getExisting.Value;
+
+        if (model.Status == ModelStatus.Untrained && newStatus == ModelStatus.Ready)
+            return Result.Failed(new Error(400, "", $"Cannot move status of model with id {modelId} from Untrained directly to Ready."));
+        
+        return await _store.SetStatusAsync(modelId, newStatus);
     }
 }

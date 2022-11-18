@@ -1,11 +1,13 @@
 using System.Text.Json;
 using DucksAndDogs.Core.Models;
 
-namespace DucksAndDogs.Persistence;
+namespace DucksAndDogs.Persistence.Stores;
 
-public abstract class StoreBase
+public abstract class StoreBase<T>
 {
-    protected static async Task<R> DoWithSemaphore<R>(SemaphoreSlim semaphore, Func<Task<R>> func, int semaphoreTimeoutmillisecodns = 5000) where R : ResultBase, new()
+    protected abstract string DataPath { get; }
+
+    protected static async Task<R> DoWithSemaphoreAsync<R>(SemaphoreSlim semaphore, Func<Task<R>> func, int semaphoreTimeoutmillisecodns = 5000) where R : ResultBase, new()
     {
         var gotSemaphore = await semaphore.WaitAsync(semaphoreTimeoutmillisecodns);
         if (!gotSemaphore) return new R() { Error = new Error(500, "", "Could not get access to json file.") };
@@ -24,9 +26,9 @@ public abstract class StoreBase
         }
     }
 
-    protected static async Task<Result<T>> ReadJsonFile<T>(string dataPath)
+    protected async Task<Result<T>> ReadJsonFileAsync()
     {
-        var fileStream = File.OpenRead(dataPath);
+        var fileStream = File.OpenRead(DataPath);
         Error error;
         try
         {
@@ -41,13 +43,13 @@ public abstract class StoreBase
         return Result<T>.Failed(error);
     }
 
-    protected async Task<Result> WriteJsonFile<T>(T data, string dataPath)
+    protected async Task<Result> WriteJsonFileAsync(T data)
     {
-        File.Delete(dataPath);
-        var fileStream = File.OpenWrite(dataPath);
+        File.Delete(DataPath);
+        var fileStream = File.OpenWrite(DataPath);
         try
         {
-            await JsonSerializer.SerializeAsync<T>(fileStream, data);
+            await JsonSerializer.SerializeAsync(fileStream, data);
             return Result.Success();
         }
         finally

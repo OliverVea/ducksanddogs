@@ -13,5 +13,5 @@ public interface IModelInferenceService
     /// <param name="modelId">The id of the model.</param>
     /// <param name="request"></param>
     /// <returns>An inference from the model.</returns>
-    Task<Result<Inference>> Infer(string modelId, InferRequest request);
+    Task<Result<Inference>> MakeInferenceAsync(string modelId, InferRequest request);
 }

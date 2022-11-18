@@ -4,87 +4,94 @@ using DucksAndDogs.Persistence.Models;
 
 namespace DucksAndDogs.Persistence.Stores;
 
-public class ModelStore : StoreBase, IModelStore
+// Yes, this should probably interact with some sort of actual database and not a .json file, but I thought it was fun to make a .json file sort of thread safe.
+sealed class ModelStore : StoreBase<ModelData>, IModelStore, IInitializableStore
 {
     private static readonly SemaphoreSlim _jsonFileSemaphore = new SemaphoreSlim(1, 1);
 
-    public Task<Result> Create(Core.Models.Model model)
+    protected override string DataPath => "./data/ModelData.json";
+
+    public async Task InitializeStoreAsync()
     {
-        return DoWithSemaphore(_jsonFileSemaphore, async () => {
-            var result = await ReadJsonFile<ModelData>(Constants.ModelDataPath);
+        if (File.Exists(DataPath)) return;
+    
+        var fileStream = File.OpenWrite(DataPath);
+        await WriteJsonFileAsync(new ModelData());
+    }
+
+    public Task<Result> CreateAsync(Core.Models.Model model)
+    {
+        return DoWithSemaphoreAsync(_jsonFileSemaphore, async () => {
+            var result = await ReadJsonFileAsync();
             if (!result.Succeeded()) return (Result)result;
 
             var data = result.Value;
+            data.Models = data.Models.Append(Map(model)).ToArray();
 
-            var newData = data with
-            {
-                Models = data.Models.Append(Map(model)).ToArray()
-            };
-
-            var writeResult = await WriteJsonFile(newData, Constants.ModelDataPath);
-            if (!writeResult.Succeeded()) return writeResult;
-
-            return Result.Success();
+            return await WriteJsonFileAsync(data);
         });
     }
 
-    public Task<Result> Delete(string modelId)
+    public Task<Result> DeleteAsync(string modelId)
     {
-        return DoWithSemaphore(_jsonFileSemaphore, async () => {
-            var readResult = await ReadJsonFile<ModelData>(Constants.ModelDataPath);
+        return DoWithSemaphoreAsync(_jsonFileSemaphore, async () => {
+            var readResult = await ReadJsonFileAsync();
             if (!readResult.Succeeded()) return (Result)readResult;
 
-            var newData = readResult.Value with
-            {
-                Models = readResult.Value.Models.Where(x => x.Id != modelId).ToArray()
-            };
+            var data = readResult.Value;
+            data.Models = data.Models.Where(x => x.Id != modelId).ToArray();
 
-            var writeResult = await WriteJsonFile(newData, Constants.ModelDataPath);
-            if (!writeResult.Succeeded()) return writeResult;
-
-            return Result.Success();
+            return await WriteJsonFileAsync(data);
         });
     }
 
-    public Task<Result<Core.Models.Model>> Get(string modelId)
+    public Task<Result<Core.Models.Model>> GetAsync(string modelId)
     {
-        return DoWithSemaphore(_jsonFileSemaphore, async () => {
-            var result = await ReadJsonFile<ModelData>(Constants.ModelDataPath);
-            if (!result.Succeeded()) 
-                return Result<Core.Models.Model>.Failed(new Error(500, "", "Failed reading models file."));
+        return DoWithSemaphoreAsync(_jsonFileSemaphore, async () => {
+            var result = await ReadJsonFileAsync();
+            if (!result.Succeeded()) return Result<Core.Models.Model>.Failed(result.Error);
 
             var model = result.Value.Models
                 .Where(x => x.Id == modelId)
                 .Select(Map)
                 .FirstOrDefault();
 
-            if (model == null) 
-                return Result<Core.Models.Model>.Failed(new Error(404, "modelId", $"Could not find model with id {modelId}."));
-
+            if (model == null) return Result<Core.Models.Model>.Failed(new Error(404, "modelId", $"Could not find model with id {modelId}."));
             return Result<Core.Models.Model>.Success(model);
         });
     }
 
-    public Task<Result<ModelList>> List()
+    public Task<Result<ModelList>> ListAsync()
     {
-        return DoWithSemaphore(_jsonFileSemaphore, async () => {
-             var result = await ReadJsonFile<ModelData>(Constants.ModelDataPath);
-            if (!result.Succeeded())
-                return Result<ModelList>.Failed(new Error(500, "", "Failed reading models file."));
+        return DoWithSemaphoreAsync(_jsonFileSemaphore, async () => {
+            var result = await ReadJsonFileAsync();
+            if (!result.Succeeded()) return Result<ModelList>.Failed(result.Error);
 
-            var models = result.Value.Models.Select(Map).ToList();
-            var modelList = new ModelList
-            {
-                Models = models
-            };
+            var modelList = Map(result.Value.Models);
 
             return Result<ModelList>.Success(modelList);
+        });
+    }
+
+    public Task<Result> SetStatusAsync(string modelId, ModelStatus newStatus)
+    {
+        return DoWithSemaphoreAsync(_jsonFileSemaphore, async () => {
+            var result = await ReadJsonFileAsync();
+            if (!result.Succeeded()) return (Result)result;
+
+            var data = result.Value;
+            var model = data.Models.Where(x => x.Id == modelId).FirstOrDefault();
+            if (model == null) return Result.Failed(new Error(404, "modelId", $"Could not find model with id {modelId}."));
+
+            model.Status = newStatus;
+
+            return await WriteJsonFileAsync(data);
         });
     }
     
 
 
-    private Persistence.Models.Model MapCreateRequest(string modelId, CreateModelRequest request)
+    private Persistence.Models.Model Map(string modelId, CreateModelRequest request)
         => new Models.Model
         {
             Id = modelId,
@@ -106,5 +113,11 @@ public class ModelStore : StoreBase, IModelStore
             Id = model.Id,
             Name = model.Name,
             Status = model.Status
+        };
+
+    private ModelList Map(Persistence.Models.Model[] models) 
+        => new ModelList
+        {
+            Models =  models.Select(Map).ToList()
         };
 }

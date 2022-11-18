@@ -16,11 +16,6 @@ public enum ModelStatus
     Ready,
 
     /// <summary>
-    /// The model is queued for training.
-    /// </summary>
-    Queued,
-
-    /// <summary>
     /// The model is currently being trained.
     /// </summary>
     Training

@@ -8,11 +8,9 @@ namespace DucksAndDogs.Core.Services;
 public interface IModelTrainingService
 {
     /// <summary>
-    /// Starts training the model with id <paramref name="modelId" /> with the parameters specified in <paramref name="request" />.
-    /// The model is ready when it has the 'Ready' status.
+    /// Checks all models to see if any have the training status.
+    /// If a model has the training status, training is commenced.
     /// </summary>
-    /// <param name="modelId">The id of the model.</param>
-    /// <param name="request"></param>
     /// <returns>Result indicating if the training was initiated successfully.</returns>
-    Task<Result> Train(string modelId, TrainModelRequest request);
+    Task<Result> TrainModelsInQueueAsync(CancellationToken cancellationToken);
 }
