@@ -11,6 +11,6 @@ public interface IModelTrainingService
     /// Checks all models to see if any have the training status.
     /// If a model has the training status, training is commenced.
     /// </summary>
-    /// <returns>Result indicating if the training was initiated successfully.</returns>
+    /// <returns>Result indicating if the training was completed successfully.</returns>
     Task<Result> TrainModelsInQueueAsync(CancellationToken cancellationToken);
 }

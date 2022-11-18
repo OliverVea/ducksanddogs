@@ -1,14 +1,18 @@
 using DucksAndDogs.Core.Models;
 using DucksAndDogs.Core.Services;
 
+using Microsoft.ML;
+
 namespace DucksAndDogs.Application.ML.Services;
 
 public class ModelTrainingService : IModelTrainingService
 {
     private readonly IModelService _modelService;
+    private readonly MLContext _mlContext;
 
     public ModelTrainingService(IModelService modelService) {
         _modelService = modelService;
+        _mlContext = new MLContext(0);
     }
 
     public async Task<Result> TrainModelsInQueueAsync(CancellationToken cancellationToken)
@@ -22,14 +26,14 @@ public class ModelTrainingService : IModelTrainingService
 
         foreach (var model in modelsForTraining)  
         {
-            var trainingResult = await TrainModelAsync(model.Id);
+            var trainingResult = await TrainModelAsync(model.Id, cancellationToken);
             if (!trainingResult.Succeeded()) return trainingResult;
         }
 
         return Result.Success();
     }
 
-    private Task<Result> TrainModelAsync(string id)
+    private Task<Result> TrainModelAsync(string id, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
